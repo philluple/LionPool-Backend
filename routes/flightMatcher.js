@@ -17,7 +17,7 @@ async function getMatches(flightId, userId, airport){
 		// DB References
 		const confirmRef = db.collection('flights').doc(airport).collection('userFlights').doc(`${flightId}-${userId}`);
 		const airportRef = db.collection('flights').doc(airport).collection('userFlights');
-		const flightsToReturn = [];
+		const matches = [];
 		const results = [];
 		var requesterFlightDate; 
 	
@@ -49,8 +49,7 @@ async function getMatches(flightId, userId, airport){
 					const res = await flightRef.update({foundMatch:true})
 					flightsInRange.forEach((flight)=>{
 						if (flight.data()['userId']!= userId){
-							// console.log("Found match with user: ", flight.data()['userId'])
-							flightsToReturn.push(flight);
+							matches.push(flight);
 						}
 					});
 				}
@@ -58,7 +57,7 @@ async function getMatches(flightId, userId, airport){
 				throw new noFlightError();
 			}
 	
-			for(const flight of flightsToReturn){
+			for(const flight of matches){
 				const request = await db.collection('users').doc(flight.data()['userId']).get();
 				const date = timestampToISO(flight.data()['date']); // Convert Firestore Timestamp to ISO8601 string
 				const name = request.data()['firstname']+" "+request.data()['lastname']
@@ -91,8 +90,8 @@ async function getMatches(flightId, userId, airport){
 
 async function writeMatches(potentialMatches, airport, userId, requesterFlightDate, flightId){
 	const currentUser = await db.collection('users').doc(userId).get();
-	var name = currentUser.data()['firstname']+" "+currentUser.data()['lastname']
-	const currentUserImage = currentUser.data()['pfpLocation']
+	var name = currentUser.data()['firstname']+" "+currentUser.data()['lastname'];
+	const currentUserImage = currentUser.data()['pfpLocation'];
 	
 	//what is added to the current user
 	const addedFlight = {
@@ -102,19 +101,24 @@ async function writeMatches(potentialMatches, airport, userId, requesterFlightDa
 		date: requesterFlightDate,
 		name: name
 	};
-
+	
+	try{
+		for(const match of potentialMatches){
+			console.log("DATE: ",isoToCustomFormat(match.date));
+			const newDocument = isoToCustomFormat(requesterFlightDate)+"-"+userId;
+			const res = await db.collection('users').doc(match.userId).collection('userFlights').doc(match.id).collection('matches').doc(newDocument).set(addedFlight);
+		}
+	
+		//now add each match the requestedUsers own instances
+		for(const match of potentialMatches){
+			const newDocument = isoToCustomFormat(match.date)+"-"+match.userId;
+			const res = await db.collection('users').doc(userId).collection('userFlights').doc(flightId).collection('matches').doc(newDocument).set(match);
+		}
+	}catch (error){
+		console.error("ERROR: "+error);
+	}
 	//go to each match and add the requestedUser
-	for(const match of potentialMatches){
-		console.log("DATE: ",isoToCustomFormat(match.date));
-		const newDocument = isoToCustomFormat(requesterFlightDate)+"-"+userId;
-		const res = await db.collection('users').doc(match.userId).collection('userFlights').doc(match.id).collection('matches').doc(newDocument).set(addedFlight);
-	}
-
-	//now add each match the requestedUsers own instances
-	for(const match of potentialMatches){
-		const newDocument = isoToCustomFormat(match.date)+"-"+match.userId;
-		const res = await db.collection('users').doc(userId).collection('userFlights').doc(flightId).collection('matches').doc(newDocument).set(match);
-	}
+	
 }
 
 module.exports = getMatches;
