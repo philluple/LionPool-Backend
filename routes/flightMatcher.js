@@ -11,9 +11,86 @@ const bucket = admin.storage().bucket();
 
 
 const moment = require('moment');
+const { request } = require('express');
 const db = getFirestore();
 
+async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recieverUserId){
+	return new Promise(async(resolve, reject) => {
+		/*
+		Flow: 
+		requester sends a request, the open request gets written to sentRequests collection within upon acceptance, it moves to the matches 
+		reciever recieves the request in inRequests, upon accept, gets moved to matches 
+		*/
+		const matchId = uuidv1();
 
+		//References for data
+		const senderRef = db.collection('users').doc(senderUserId).collection('outRequests').doc(matchId);
+		const recieverRef = db.collection('users').doc(recieverUserId).collection('inRequests').doc(matchId);
+		
+		//Get basic info to populate data
+		try{
+			const senderInfoQuery = await db.collection('users').doc(senderUserId).get()
+			const recieverInfoQuery = await db.collection('users').doc(recieverUserId).get()
+			const senderFlightQuery = await db.collection('users').doc(senderUserId).collection('userFlights').doc(senderFlightId).get()
+			const senderName = senderInfoQuery.data()['firstname']+' '+senderInfoQuery.data()['lastname'];
+			const senderPfp = senderInfoQuery.data()['pfpLocation']
+			const recieverName = recieverInfoQuery.data()['firstname']+' '+recieverInfoQuery.data()['lastname'];
+			const recieverPfp = recieverInfoQuery.data()['pfpLocation'];
+			const flightDateStamp = senderFlightQuery.data()['date'];
+			const flightDate = timestampToISO(flightDateStamp);
+			const airport = senderFlightQuery.data()['airport'];
+			const requestDate = Timestamp.now()
+
+			const recieverData = {
+				id: matchId,
+				flightId: recieverFlightId,
+				senderFlightId: senderFlightId,
+				name: senderName,
+				userId: senderUserId,
+				requestDate: requestDate,
+				flightDate: flightDateStamp,
+				pfpLocation: senderPfp, 
+				airport: airport, 
+				status: "PENDING"
+			};
+			
+			const formattedDate = timestampToISO(requestDate);
+
+			const senderData = {
+				id: matchId, 
+				senderFlightId: senderFlightId,
+				recieverFlightId: recieverFlightId,
+				name: recieverName, 
+				userId: recieverUserId, 
+				requestDate: requestDate,
+				flightDate: flightDateStamp,
+				pfpLocation: recieverPfp,
+				airport: airport, 
+				status: "PENDING"
+
+			};
+
+			const senderDataToFront = {
+				id: matchId, 
+				senderFlightId: senderFlightId,
+				recieverFlightId: recieverFlightId,
+				recieverUserId: recieverUserId, 
+				date: flightDate,
+				pfp: recieverPfp,
+				name: recieverName, 
+				status: "PENDING",
+				airport: airport
+			};
+
+			await senderRef.set(senderData);
+			await recieverRef.set(recieverData);
+			resolve(senderDataToFront);
+
+		}catch(error){
+			reject(error)
+		}
+	});
+}
 async function getMatches(flightId, userId, airport){
 	return new Promise(async(resolve, reject) => {
 
@@ -44,7 +121,6 @@ async function getMatches(flightId, userId, airport){
 				
 				// Case: Only own flight is within range 
 				if (flightsInRange.length==1){
-					console.log("Could not find "+userId+" matches for flight on: "+requesterFlightDate.toDate());
 					resolve(results);
 				} 
 				//Case: Other flights within range
@@ -59,7 +135,6 @@ async function getMatches(flightId, userId, airport){
 			} else {
 				throw new noFlightError();
 			}
-	
 			for(const flight of matches){
 				const request = await db.collection('users').doc(flight.data()['userId']).get();
 				const date = timestampToISO(flight.data()['date']); // Convert Firestore Timestamp to ISO8601 string
@@ -67,21 +142,15 @@ async function getMatches(flightId, userId, airport){
 				const pfp = request.data()['pfpLocation'];		
 				results.push({
 					id: uuidv1(),
-					userId: flight.data()['userId'],
-					flightId: flight.data()['id'],
-					pfp: pfp,
+					senderFlightId: flightId,
+					recieverFlightId: flight.data()['id'],
+					recieverUserId : flight.data()['userId'],
 					date: date,
+					pfp: pfp,
 					name: name
 				});
 			}
 
-			if(results.length == 0){
-				console.log("There are no matches, prompt the user to wait")
-			}else{
-				//call the function below 
-				console.log("Done! Found the user "+results.length+" matches!");
-				//const writeResult = await writeMatches(results, airport, userId, requesterFlightDate, flightId);
-			}
 			resolve(results);
 			
 		} catch (error) {
@@ -107,9 +176,7 @@ async function writeMatches(potentialMatches, airport, userId, requesterFlightDa
 	
 	try{
 		for(const match of potentialMatches){
-			console.log("DATE: ",isoToCustomFormat(match.date));
 			const newDocument = isoToCustomFormat(requesterFlightDate)+"-"+userId;
-			console.log(newDocument)
 			const res = await db.collection('users').doc(match.userId).collection('userFlights').doc(match.id).collection('matches').doc(newDocument).set(addedFlight);
 		}
 	
@@ -126,6 +193,9 @@ async function writeMatches(potentialMatches, airport, userId, requesterFlightDa
 	
 }
 
-module.exports = getMatches;
+module.exports = {
+	getMatches, 
+	sendRequest
+};
   
   

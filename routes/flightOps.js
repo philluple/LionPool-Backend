@@ -8,23 +8,9 @@ const serviceAccount = require('../lion-pool-f5755-firebase-adminsdk-zzm20-5b403
 
 const db = getFirestore();
 
-// async function getImage(imageURL){
-// 	return new Promise(async(resolve, reject) => {
-// 		const bucket = admin.storage().bucket('gs://lion-pool-f5755.appspot.com');
-// 		try {
-// 			const httpsReference = bucket.file(imageURL);
-// 			const[imageData] = await httpsReference.downlaod();
-// 			resolve(imageData);
-// 		} catch(error){
-// 			console.error('Error downloading image', error)
-// 			reject(error);
-// 		}
 
-// 	});
-// }
 async function fetchFlights(userId){
 	return new Promise(async(resolve, reject) => {
-		console.log(userId)
 		const flights = []
 		try{
 			const userFlights = await db.collection('users').doc(userId).collection('userFlights').get();
@@ -108,7 +94,6 @@ async function addFlight(userId, date, airport){
 							.doc(document_name)
 							.set(flightDataForAirport);
 
-				console.log("SUCCESS: Added flight")
 				resolve(flightDataForUser)
 			}
 		} catch (error) {
@@ -123,15 +108,9 @@ async function addFlight(userId, date, airport){
 		}
 	})
 }
-let fullURL = "\(baseURL)/flight/deleteFlight?flightId=\(flightId)&userId=\(userId)"
 
 async function deleteFlight (flightId, userId, airport){
 	return new Promise(async(resolve, reject) => {
-		//First confirm flight exists
-		// confirmRef = db.collection('users').doc(userId).collection('userFlights').doc(flightId);
-		// await confirmRef.get() 
-
-		console.log("User: "+userId+" attempting to delete flight: "+flightId);
 		const document_name = `${flightId}-${userId}`
 
 		try{
@@ -146,7 +125,10 @@ async function deleteFlight (flightId, userId, airport){
 				.collection('userFlights')
 				.doc(document_name)
 				.delete();
+
+			//also delete the found match
 			resolve(null);
+
 
 		}catch(error){
 			reject(error);
