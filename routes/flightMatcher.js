@@ -1,10 +1,13 @@
-// const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
-// const { getFirestore, Timestamp, FieldValue, Filter } = require('firebase-admin/firestore');
-const {Timestamp, FieldValue, Filter } = require('firebase-admin/firestore');
+const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
+const { getFirestore, Timestamp, FieldValue, Filter } = require('firebase-admin/firestore');
+const admin = require('firebase-admin');
+const { v1: uuidv1, v4: uuidv4,} = require('uuid');
+
 
 const {isoToCustomFormat, timestampToISO} = require('./utils/timeUtils')
-// const serviceAccount = require('../lion-pool-f5755-firebase-adminsdk-zzm20-5b403629fd.json');
 const {noFlightError} = require('./utils/error'); 
+
+const bucket = admin.storage().bucket();
 
 
 const moment = require('moment');
@@ -46,7 +49,7 @@ async function getMatches(flightId, userId, airport){
 				} 
 				//Case: Other flights within range
 				else{
-					const res = await flightRef.update({foundMatch:true})
+					const res = await confirmRef.update({foundMatch:true})
 					flightsInRange.forEach((flight)=>{
 						if (flight.data()['userId']!= userId){
 							matches.push(flight);
@@ -62,10 +65,10 @@ async function getMatches(flightId, userId, airport){
 				const date = timestampToISO(flight.data()['date']); // Convert Firestore Timestamp to ISO8601 string
 				const name = request.data()['firstname']+" "+request.data()['lastname']
 				const pfp = request.data()['pfpLocation'];		
-		
 				results.push({
+					id: uuidv1(),
 					userId: flight.data()['userId'],
-					id: flight.data()['id'],
+					flightId: flight.data()['id'],
 					pfp: pfp,
 					date: date,
 					name: name
@@ -77,7 +80,7 @@ async function getMatches(flightId, userId, airport){
 			}else{
 				//call the function below 
 				console.log("Done! Found the user "+results.length+" matches!");
-				const writeResult = await writeMatches(results, airport, userId, requesterFlightDate, flightId);
+				//const writeResult = await writeMatches(results, airport, userId, requesterFlightDate, flightId);
 			}
 			resolve(results);
 			
@@ -106,12 +109,14 @@ async function writeMatches(potentialMatches, airport, userId, requesterFlightDa
 		for(const match of potentialMatches){
 			console.log("DATE: ",isoToCustomFormat(match.date));
 			const newDocument = isoToCustomFormat(requesterFlightDate)+"-"+userId;
+			console.log(newDocument)
 			const res = await db.collection('users').doc(match.userId).collection('userFlights').doc(match.id).collection('matches').doc(newDocument).set(addedFlight);
 		}
 	
 		//now add each match the requestedUsers own instances
 		for(const match of potentialMatches){
 			const newDocument = isoToCustomFormat(match.date)+"-"+match.userId;
+			console.log(match)
 			const res = await db.collection('users').doc(userId).collection('userFlights').doc(flightId).collection('matches').doc(newDocument).set(match);
 		}
 	}catch (error){

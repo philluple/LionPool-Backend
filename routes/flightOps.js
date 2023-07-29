@@ -8,10 +8,49 @@ const serviceAccount = require('../lion-pool-f5755-firebase-adminsdk-zzm20-5b403
 
 const db = getFirestore();
 
+// async function getImage(imageURL){
+// 	return new Promise(async(resolve, reject) => {
+// 		const bucket = admin.storage().bucket('gs://lion-pool-f5755.appspot.com');
+// 		try {
+// 			const httpsReference = bucket.file(imageURL);
+// 			const[imageData] = await httpsReference.downlaod();
+// 			resolve(imageData);
+// 		} catch(error){
+// 			console.error('Error downloading image', error)
+// 			reject(error);
+// 		}
+
+// 	});
+// }
+async function fetchFlights(userId){
+	return new Promise(async(resolve, reject) => {
+		console.log(userId)
+		const flights = []
+		try{
+			const userFlights = await db.collection('users').doc(userId).collection('userFlights').get();
+			if (userFlights.empty) {
+				resolve(flights) 
+			} else{
+				userFlights.forEach	(flight => {
+					flights.push({
+						id: flight.data()['id'],
+						userId: flight.data()['userId'],
+						airport: flight.data()['airport'],
+						date: timestampToISO(flight.data()['date']),
+						foundMatch: flight.data()['foundMatch']
+					});
+				});
+				resolve(flights);
+		}
+		}catch(error){
+			console.log("Error: could not fetch: ", error)
+			reject(error)
+		}
+	});
+}
+
 async function addFlight(userId, date, airport){
 	return new Promise(async(resolve, reject) => {
-
-		console.log("DEBUG: Attempting to add flight for user", userId)
 		const formattedDate = new Date(date);
 		const startOfDay = new Date(date);
 		startOfDay.setHours(0,0,0,0);
@@ -84,21 +123,28 @@ async function addFlight(userId, date, airport){
 		}
 	})
 }
+let fullURL = "\(baseURL)/flight/deleteFlight?flightId=\(flightId)&userId=\(userId)"
 
 async function deleteFlight (flightId, userId, airport){
 	return new Promise(async(resolve, reject) => {
+		//First confirm flight exists
+		// confirmRef = db.collection('users').doc(userId).collection('userFlights').doc(flightId);
+		// await confirmRef.get() 
+
 		console.log("User: "+userId+" attempting to delete flight: "+flightId);
+		const document_name = `${flightId}-${userId}`
+
 		try{
-			await db.collection('flights')
-						.doc(airport)
-						.collection('userFlights')
-						.doc(flightId+userId)
-						.delete();
+			await db.collection('users')
+				.doc(userId)
+				.collection('userFlights')
+				.doc(flightId)
+				.delete();
 
 			await db.collection('flights')
 				.doc(airport)
 				.collection('userFlights')
-				.doc(flightId+userId)
+				.doc(document_name)
 				.delete();
 			resolve(null);
 
@@ -110,7 +156,8 @@ async function deleteFlight (flightId, userId, airport){
 
 module.exports = {
 	addFlight, 
-	deleteFlight
+	deleteFlight,
+	fetchFlights
 };
   
   

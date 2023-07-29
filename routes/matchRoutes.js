@@ -6,11 +6,16 @@ const getMatches = require("./flightMatcher")
 const db = admin.firestore();
 
 router.get('/matches', async (req, res) => {
+			const results = [];
+
 	try {
 		//call match function
 		const flightId = req.query.flightId;
 		const userId = req.query.userId;
 		const airport = req.query.airport;
+		console.log(flightId)
+		console.log(userId)
+		console.log(airport)
 		const results = await getMatches(flightId.toLowerCase(), userId, airport);
 		if (results.length == 0){
 			//HTTP CODE OF 204 MEANS NO CONTENT BUT GOOD REQUEST
