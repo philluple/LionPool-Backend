@@ -61,7 +61,7 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 				senderFlightId: senderFlightId,
 				recieverFlightId: recieverFlightId,
 				name: recieverName, 
-				userId: recieverUserId, 
+				recieverUserId: recieverUserId, 
 				requestDate: requestDate,
 				flightDate: flightDateStamp,
 				pfpLocation: recieverPfp,

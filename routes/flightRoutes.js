@@ -4,20 +4,22 @@ const admin = require('firebase-admin');
 const bodyParser = require('body-parser');
 
 const { databaseError, flightExistsError} = require('./utils/error'); // Adjust the file path accordingly
-const { addFlight, deleteFlight, fetchFlights} = require("./flightOps")
+const { addFlight, deleteFlight, fetchFlights, fetchRequests} = require("./flightOps")
 
 const db = admin.firestore();
 
-// router.get('/user/getImage', async (req, res) => {
-// 	try {
-// 		const imageURL = req.query.imageURL;
-// 		const imageData = await getImage(imageURL);
-// 		res.send(imageData)
-// 	}catch (error){
-// 		res.send(null)
-// 	}
-
-// })
+router.get('/user/fetchRequests', async (req, res) => {
+	try {
+		const userId = req.query.userId;
+		const result = await fetchRequests(userId);
+		console.log("Sending user: "+userId+" their requests")
+		res.status(200).json(result);
+		console.log(result)
+	} catch (error) {
+		console.error('Error fetching requests: ', error);
+		res.status(500).json({});
+	}
+});
 
 router.post('/flight/addFlight', async (req, res) => {
 	try {
@@ -28,9 +30,8 @@ router.post('/flight/addFlight', async (req, res) => {
 		console.log("User: "+userId+" added a flight successfully!")
 		res.status(200).json(result);
 	} catch (error) {
-	  	console.error('Error adding flight:', error);
+	  	console.error('Error adding flight: ', error);
 		if (error instanceof flightExistsError){
-			console.log("here")
 			res.status(400).json({});
 		}else{console
 			res.status(500).json({});
