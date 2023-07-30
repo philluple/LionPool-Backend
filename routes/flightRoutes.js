@@ -4,9 +4,22 @@ const admin = require('firebase-admin');
 const bodyParser = require('body-parser');
 
 const { databaseError, flightExistsError} = require('./utils/error'); // Adjust the file path accordingly
-const { addFlight, deleteFlight, fetchFlights, fetchRequests} = require("./flightOps")
+const { addFlight, deleteFlight, fetchFlights, fetchRequests, fetchInRequests} = require("./flightOps")
 
 const db = admin.firestore();
+
+router.get('/user/fetchInRequests', async (req, res) => {
+	try {
+		const userId = req.query.userId;
+		const result = await fetchInRequests(userId);
+		console.log("Sending user: "+userId+" their requests")
+		res.status(200).json(result);
+		console.log(result)
+	} catch (error) {
+		console.error('Error fetching requests: ', error);
+		res.status(500).json({});
+	}
+});
 
 router.get('/user/fetchRequests', async (req, res) => {
 	try {

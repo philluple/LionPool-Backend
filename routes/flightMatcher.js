@@ -21,6 +21,7 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 		requester sends a request, the open request gets written to sentRequests collection within upon acceptance, it moves to the matches 
 		reciever recieves the request in inRequests, upon accept, gets moved to matches 
 		*/
+		console.log("Sending user request")
 		const matchId = uuidv1();
 
 		//References for data
@@ -37,24 +38,25 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 			const recieverName = recieverInfoQuery.data()['firstname']+' '+recieverInfoQuery.data()['lastname'];
 			const recieverPfp = recieverInfoQuery.data()['pfpLocation'];
 			const flightDateStamp = senderFlightQuery.data()['date'];
-			const flightDate = timestampToISO(flightDateStamp);
+			const flightDate = flightDateStamp.toDate().toISOString();
 			const airport = senderFlightQuery.data()['airport'];
-			const requestDate = Timestamp.now()
+			// const requestDate = Timestamp.now()
 
 			const recieverData = {
-				id: matchId,
-				flightId: recieverFlightId,
+				id: matchId, 
 				senderFlightId: senderFlightId,
-				name: senderName,
-				userId: senderUserId,
-				requestDate: requestDate,
+				recieverFlightId: recieverFlightId,
+				name: senderName, 
+				recieverUserId: recieverUserId, 
+				// requestDate: requestDate,
 				flightDate: flightDateStamp,
-				pfpLocation: senderPfp, 
+				pfpLocation: senderPfp,
 				airport: airport, 
-				status: "PENDING"
+				status: "PENDING",
+				acknowledged: false
 			};
 			
-			const formattedDate = timestampToISO(requestDate);
+			// const formattedDate = timestampToISO(requestDate);
 
 			const senderData = {
 				id: matchId, 
@@ -62,12 +64,12 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 				recieverFlightId: recieverFlightId,
 				name: recieverName, 
 				recieverUserId: recieverUserId, 
-				requestDate: requestDate,
+				// requestDate: requestDate,
 				flightDate: flightDateStamp,
 				pfpLocation: recieverPfp,
 				airport: airport, 
-				status: "PENDING"
-
+				status: "PENDING",
+				acknowledged: false
 			};
 
 			const senderDataToFront = {
@@ -75,11 +77,13 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 				senderFlightId: senderFlightId,
 				recieverFlightId: recieverFlightId,
 				recieverUserId: recieverUserId, 
-				date: flightDate,
+				flightDate: flightDate,
+				// requestDate: requestDate,
 				pfp: recieverPfp,
 				name: recieverName, 
 				status: "PENDING",
-				airport: airport
+				airport: airport,
+				acknowledged: false
 			};
 
 			await senderRef.set(senderData);

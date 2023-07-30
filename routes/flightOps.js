@@ -8,6 +8,36 @@ const serviceAccount = require('../lion-pool-f5755-firebase-adminsdk-zzm20-5b403
 
 const db = getFirestore();
 
+async function fetchInRequests(userId){
+	return new Promise(async(resolve, reject) => {
+		const requests = []
+		try{
+			const userRequests = await db.collection('users').doc(userId).collection('inRequests').get()
+			if (userRequests.empty){
+				resolve(requests)
+			} else{
+				userRequests.forEach (request => {
+					requests.push({
+						id: request.data()['id'], 
+						senderFlightId: request.data()['senderFlightId'],
+						recieverFlightId: request.data()['recieverFlightId'],
+						recieverUserId: request.data()['recieverUserId'], 
+						requestDate: timestampToISO(request.data()['requestDate']),
+						flightDate: timestampToISO(request.data()['flightDate']),
+						name: request.data()['name'], 
+						pfp: request.data()['pfpLocation'],
+						status: request.data()['status'],
+						airport: request.data()['airport']
+					});
+				});
+				resolve(requests);
+			}
+		}catch(error){
+			reject(error)
+		}
+	});
+}
+
 async function fetchRequests(userId){
 	return new Promise(async(resolve, reject) => {
 		const requests = []
@@ -139,6 +169,7 @@ async function deleteFlight (flightId, userId, airport){
 		const document_name = `${flightId}-${userId}`
 
 		try{
+			
 			await db.collection('users')
 				.doc(userId)
 				.collection('userFlights')
@@ -162,7 +193,8 @@ module.exports = {
 	addFlight, 
 	deleteFlight,
 	fetchFlights,
-	fetchRequests
+	fetchRequests,
+	fetchInRequests
 };
   
   
