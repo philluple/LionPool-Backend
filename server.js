@@ -8,7 +8,6 @@ const serviceAccount = require('./lion-pool-f5755-firebase-adminsdk-zzm20-5b4036
 
 admin.initializeApp({
 	credential: admin.credential.cert(serviceAccount),
-	storageBucket: "gs://lion-pool-f5755.appspot.com",
 });
 
   

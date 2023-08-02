@@ -8,7 +8,6 @@ const db = admin.firestore();
 
 router.get('/matches/request', async (req, res) => {
 	try {
-		console.log()
 		//Sender
 		const senderFlightId = req.query.senderFlightId;
 		const senderUserId = req.query.senderUserId;
@@ -19,7 +18,6 @@ router.get('/matches/request', async (req, res) => {
 		const result = await sendRequest(senderFlightId.toLowerCase(), senderUserId, recieverFlightId.toLowerCase(), recieverUserId);
 		res.status(200).json(result);
 		console.log("User: "+senderFlightId+" sent request to user: "+recieverUserId)
-		console.log(result)
 	} catch(error){
 		console.error('ERROR(sendRequest): ', error);
 		res.status(500).json({});

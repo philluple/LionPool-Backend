@@ -7,7 +7,7 @@ const { v1: uuidv1, v4: uuidv4,} = require('uuid');
 const {isoToCustomFormat, timestampToISO} = require('./utils/timeUtils')
 const {noFlightError} = require('./utils/error'); 
 
-const bucket = admin.storage().bucket();
+// const bucket = admin.storage().bucket();
 
 
 const moment = require('moment');
@@ -48,12 +48,13 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 				recieverFlightId: recieverFlightId,
 				name: senderName, 
 				recieverUserId: recieverUserId, 
+				senderUserId: senderUserId,
 				// requestDate: requestDate,
 				flightDate: flightDateStamp,
 				pfpLocation: senderPfp,
 				airport: airport, 
 				status: "PENDING",
-				acknowledged: false
+				notify: true
 			};
 			
 			// const formattedDate = timestampToISO(requestDate);
@@ -64,12 +65,12 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 				recieverFlightId: recieverFlightId,
 				name: recieverName, 
 				recieverUserId: recieverUserId, 
+				senderUserId: senderUserId,
 				// requestDate: requestDate,
 				flightDate: flightDateStamp,
 				pfpLocation: recieverPfp,
 				airport: airport, 
 				status: "PENDING",
-				acknowledged: false
 			};
 
 			const senderDataToFront = {
@@ -78,12 +79,12 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 				recieverFlightId: recieverFlightId,
 				recieverUserId: recieverUserId, 
 				flightDate: flightDate,
+				senderUserId: senderUserId,
 				// requestDate: requestDate,
 				pfp: recieverPfp,
 				name: recieverName, 
 				status: "PENDING",
 				airport: airport,
-				acknowledged: false
 			};
 
 			await senderRef.set(senderData);
@@ -129,7 +130,7 @@ async function getMatches(flightId, userId, airport){
 				} 
 				//Case: Other flights within range
 				else{
-					const res = await confirmRef.update({foundMatch:true})
+					// const res = await confirmRef.update({foundMatch:true})
 					flightsInRange.forEach((flight)=>{
 						if (flight.data()['userId']!= userId){
 							matches.push(flight);
@@ -146,12 +147,13 @@ async function getMatches(flightId, userId, airport){
 				const pfp = request.data()['pfpLocation'];		
 				results.push({
 					id: uuidv1(),
-					senderFlightId: flightId,
-					recieverFlightId: flight.data()['id'],
-					recieverUserId : flight.data()['userId'],
+					flightId: flightId,
+					matchFlightId: flight.data()['id'],
+					matchUserId : flight.data()['userId'],
 					date: date,
 					pfp: pfp,
-					name: name
+					name: name,
+					airport: airport
 				});
 			}
 
