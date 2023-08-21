@@ -26,12 +26,13 @@ const flightRouter = require('./routes/flightRoutes');
 const requestRouter = require('./routes/requestRoutes');
 const imageRouter = require('./routes/loadImageRoute');
 const instagramRouter = require('./routes/instagram');
+const basicRouter = require('./routes/baseRoute');
 
 app.use('/api', matchRouter);
 app.use('/api', flightRouter);
 app.use('/api', imageRouter);
 app.use('/api', requestRouter);
-app.use('/api', instagramRouter)
+app.use('/api', instagramRouter);
 
 
 app.listen(port, () => {
