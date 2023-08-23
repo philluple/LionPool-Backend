@@ -26,10 +26,26 @@ class noFlightError extends Error {
 	}
 }
 
+class InstagramAuthCodeError extends Error{
+	constructor(message){
+		super(message || "There was a problem with getting authorization code")
+		this.name = 'InstagramAuthCodeError'
+	}
+}
+
+class InstagramAuthTokenError extends Error{
+	constructor(message){
+		super(message || "There was a problem with getting the authorization token")
+		this.name = 'InstagramAuthTokenError'
+	}
+}
+
 module.exports = {
 	databaseError,
 	flightExistsError,
 	writeMatchesError,
-	noFlightError
+	noFlightError,
+	InstagramAuthCodeError,
+	InstagramAuthTokenError
 };
   

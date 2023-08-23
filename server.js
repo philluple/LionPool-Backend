@@ -25,7 +25,7 @@ const matchRouter = require('./routes/matchRoutes');
 const flightRouter = require('./routes/flightRoutes');
 const requestRouter = require('./routes/requestRoutes');
 const imageRouter = require('./routes/loadImageRoute');
-const instagramRouter = require('./routes/instagram');
+const instagramRouter = require('./routes/instagramRoute');
 const basicRouter = require('./routes/baseRoute');
 
 app.use('/api', matchRouter);

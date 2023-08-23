@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const {flightExistsError} = require('./utils/error'); // Adjust the file path accordingly
 const { addFlight, deleteFlight, fetchFlights} = require("./flight")
 const admin = require('firebase-admin');
-const db = admin.firestore();
+const db = admin.firestore
 
 
 router.post('/flight/addFlight', async (req, res) => {
