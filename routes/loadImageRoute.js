@@ -12,6 +12,18 @@ const options = {
 const imageCache = new LRUCache(options)
 // const imageCache = new LRUCache({max: 5});
 
+router.get('/updateImage', async (req, res) => {
+	try{
+		const userId = req.query.userId
+		const imageStream = await fetchImage(userId);
+		const base64Image = await convertImageStreamToBase64(imageStream);
+		imageCache.set(userId, base64Image)
+		console.log("updated image")
+		res.status(200).send({})
+	} catch(error){
+		console.log(error)
+	}
+});
 
 router.get('/fetchImage', async (req, res) => {
 	const userId = req.query.userId; // Replace this with your user ID
