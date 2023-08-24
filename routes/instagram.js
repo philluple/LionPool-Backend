@@ -37,10 +37,11 @@ async function getAuthCode (userId, code) {
 
 			if (response.data){
 				const access_token = response.data["access_token"]
+				console.log("Access token", access_token);
 				const api_userId = response.data["user_id"]
 				// Then we try to get the token
 				try{
-					const username = await getAuthToken(userId, access_token, api_userId)
+					const username = await getUserName(userId, access_token, api_userId)
 					resolve(username)
 				} catch(error){
 					reject(error)
@@ -50,41 +51,74 @@ async function getAuthCode (userId, code) {
 			}
         } catch (error) {
             reject(error);
+			console.log(error)
         }
     });
 }
 
-async function getAuthToken (userId, access_token, api_userId){
+async function getUserName (userId, access_token, api_userId){
 	return new Promise(async(resolve, reject) => {
 		try {
 			const url = `https://graph.instagram.com/${api_userId}?fields=id,username&access_token=${access_token}`;
-			const response = await axios.get(url)
-				.then(response => {
-					if (!response.data.id || !response.data.username) {
-						throw new InstagramAuthTokenError;
-					}
-					const instagram_id = response.data["id"]
-					const username = response.data["username"]
-					const instagramData = {
-						api_id: api_userId,
-						instagram_id: instagram_id, 
-						access_token: access_token,
-						username: username,
-						date: admin.firestore.Timestamp.fromDate(new Date())
-					}
-					await db.collection('users').doc(userId).collection('instagram_api').doc('user_data').set(instagramData);
-					resolve(username)
-				})
+			const response = await axios.get(url);
+
+			if (!response.data.id || !response.data.username) {
+				throw new InstagramAuthTokenError("Error getting short-lived auth token");
+			}
+			const instagram_id = response.data["id"];
+			const username = response.data["username"];
+			await getLongAuth(userId, access_token, api_userId, instagram_id, username);				
+			resolve(username)
 		} catch (error){
-			console.log(error)
 			reject(error)
 		}
+	});
+}
+
+async function getLongAuth(userId, access_token, api_userId, instagram_id, username){
+	return new Promise(async(resolve, reject) => {
+		try{
+			const long_url = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${clientSecret}&access_token=${access_token}`;
+			const long_response = await axios.get(long_url);
+			if(!long_response.data.access_token || !long_response.data.expires_in){
+				throw new InstagramAuthTokenError("Error getting long-lived auth token");
+			}
+			const long_access_token = long_response.data["access_token"];
+			const expires_in_seconds = long_response.data["expires_in"];
+			const expirationDate = calcExpirationDate(expires_in_seconds);
+			console.log("Long access: ",long_access_token);
+			const instagramData = {
+				api_id: api_userId,
+				instagram_id: instagram_id, 
+				access_token: long_access_token,
+				username: username,
+				date: admin.firestore.Timestamp.fromDate(expirationDate)
+			}
+
+			db.collection('users').doc(userId).collection('instagram_api').doc('user_data').set(instagramData);
+			resolve(null)
+		} catch (error){
+			reject(error)
+		}
+		
 	})
 }
+
+function calcExpirationDate(expires_in_seconds) {
+    const secondsInADay = 86400;
+    const days = Math.floor(expires_in_seconds / secondsInADay);
+    
+    const currentDate = new Date();
+    const expirationDate = new Date(currentDate.getTime() + days * 24 * 60 * 60 * 1000);
+
+    console.log(expirationDate);
+    return expirationDate;
+}
+
+
 
 
 
 module.exports = {
 	getAuthCode,
-	getAuthToken
 };

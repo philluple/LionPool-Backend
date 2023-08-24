@@ -10,7 +10,6 @@ const redirectUri = 'https://lion-pool.com/app/';
 
 router.post('/instagram-auth', async (req, res) => {
     try {
-		console.log("Recieved something from insta...")
 		const userId = req.body.userId
         const code = req.body.code;
 		const username = await getAuthCode(userId, code)	
@@ -22,6 +21,15 @@ router.post('/instagram-auth', async (req, res) => {
         console.log(error);
     }
 });
+
+router.get('/instagram-media', async (req, res) => {
+	try {
+		
+	} catch (error){
+		console.log(error)
+	}
+});
+
 
 
 router.get('/deauthorize', async (req, res) => {
