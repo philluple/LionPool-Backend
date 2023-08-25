@@ -23,7 +23,6 @@ async function fetchFlights(userId) {
                 });
             });
 			flights.sort(compareDate)
-			console.log(flights)
             resolve(flights);
         } catch (error) {
             reject(error);
