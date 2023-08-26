@@ -27,6 +27,8 @@ const user_data_cache = new LRUCache(data_option)
 const feed_cache = new LRUCache(image_option)
 
 // Should return JSON with username and top 6 posts
+// Add the long_access_token to the load 
+
 async function instagramSetup (userId, code){
     return new Promise(async (resolve, reject) => {
         try{
