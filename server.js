@@ -3,7 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const admin = require('firebase-admin');
 const serviceAccount = require('./lion-pool-f5755-firebase-adminsdk-zzm20-5b403629fd.json');
-
+const {getAnalytics} = ('firebase/analystics');
 
 admin.initializeApp({
 	credential: admin.credential.cert(serviceAccount),
@@ -27,12 +27,14 @@ const requestRouter = require('./routes/requestRoutes');
 const imageRouter = require('./routes/loadImageRoute');
 const instagramRouter = require('./routes/instagramRoute');
 const basicRouter = require('./routes/baseRoute');
+const userRouter = require('./routes/userRoutes');
 
 app.use('/api', matchRouter);
 app.use('/api', flightRouter);
 app.use('/api', imageRouter);
 app.use('/api', requestRouter);
 app.use('/api', instagramRouter);
+app.use('/api', userRouter)
 
 
 app.listen(port, () => {
