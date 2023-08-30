@@ -85,6 +85,7 @@ async function findMatch(flightId, userId, airport){
 			}
 			for(const flight of matches){
 				const request = await db.collection('users').doc(flight.data()['userId']).get();
+				console.log(flight.data()['userId']);
 				const date = timestampToISO(flight.data()['date']); // Convert Firestore Timestamp to ISO8601 string
 				const name = request.data()['firstname']+" "+request.data()['lastname']
 				const pfp = request.data()['pfpLocation'];		

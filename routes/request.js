@@ -33,8 +33,8 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 
 			const recieverData = {
 				id: matchId, 
-				senderFlightId: senderFlightId,
-				recieverFlightId: recieverFlightId,
+				senderFlightId: senderFlightId.toLowerCase(),
+				recieverFlightId: recieverFlightId.toLowerCase(),
 				name: senderName, 
 				recieverUserId: recieverUserId, 
 				senderUserId: senderUserId,
@@ -50,8 +50,8 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 
 			const senderData = {
 				id: matchId, 
-				senderFlightId: senderFlightId,
-				recieverFlightId: recieverFlightId,
+				senderFlightId: senderFlightId.toLowerCase(),
+				recieverFlightId: recieverFlightId.toLowerCase(),
 				name: recieverName, 
 				recieverUserId: recieverUserId, 
 				senderUserId: senderUserId,
@@ -64,8 +64,8 @@ async function sendRequest(senderFlightId, senderUserId, recieverFlightId, recie
 
 			const senderDataToFront = {
 				id: matchId, 
-				senderFlightId: senderFlightId,
-				recieverFlightId: recieverFlightId,
+				senderFlightId: senderFlightId.toLowerCase(),
+				recieverFlightId: recieverFlightId.toLowerCase(),
 				recieverUserId: recieverUserId, 
 				flightDate: flightDate,
 				senderUserId: senderUserId,

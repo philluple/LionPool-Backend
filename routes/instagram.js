@@ -8,24 +8,78 @@ const serviceAccount = require('../lion-pool-f5755-firebase-adminsdk-zzm20-5b403
 const admin = require('firebase-admin');
 const db = getFirestore();
 const { LRUCache } = require('lru-cache')
-
+const crypto = require('crypto')
 
 const clientID = '1326528034640707'; // Corrected typo
 const clientSecret = '18099f125a22c5d417c2d92a2dcc935b';
 const grantType = 'authorization_code';
-const redirectUri = 'https://lion-pool.com/app/';
+const redirectUri = 'https://lion-pool.com/app';
 
 const data_option = {
     max: 50
 }
 
 const image_option = {
-    max: 10
+    max: 20,
+	maxAge: 24 * 60 * 60 * 1000
 }
 
-const user_data_cache = new LRUCache(data_option)
 const feed_cache = new LRUCache(image_option)
 
+function deriveKeyFromUserId(userId) {
+    return crypto.pbkdf2Sync(userId, 'salt', 100000, 32, 'sha256');
+}
+
+function encryptData(data, derivedKey) {
+	const iv = crypto.randomBytes(16);
+	const cipher = crypto.createCipheriv('aes-256-cbc', derivedKey, iv);
+	let encryptedData = cipher.update(data, 'utf8', 'hex');
+	encryptedData += cipher.final('hex');
+	return { iv: iv.toString('hex'), encryptedData };
+}
+
+function decryptData(encryptedData, iv, derivedKey) {
+	const decipher = crypto.createDecipheriv('aes-256-cbc', derivedKey, Buffer.from(iv, 'hex'));
+	let decryptedData = decipher.update(encryptedData, 'hex', 'utf8');
+	decryptedData += decipher.final('utf8');
+	return decryptedData;
+}
+
+async function retrieveData(userId){
+	const doc = await db.collection('users').doc(userId).collection('instagram_api').doc('user_data').get()
+	if(!doc.exists) {
+		console.log('No document found');
+		return null
+	} else{
+		return doc.data();
+	}
+}
+
+async function fetchFeed (userId){
+	return new Promise(async (resolve, reject) => {
+		try{
+			const cachedFeed = feed_cache.get(userId)
+			if (cachedFeed){
+				resolve(cachedFeed)
+			}else{
+				const derivedKey = deriveKeyFromUserId(userId);
+				const encryptedData = await retrieveData(userId);
+				if (encryptData) {
+					const access_token = decryptData(encryptedData.access_token.encryptedData, encryptedData.access_token.iv, derivedKey);
+					const post = await getMedia(access_token);
+					feed_cache.set(userId, post);
+							const cachedImage = imageCache.get(userId)
+					resolve(post)
+				} else {
+					reject(null)
+				}
+			}
+		} catch(error){
+			console.log(error);
+			reject(error);
+		}
+	});
+}
 // Should return JSON with username and top 6 posts
 async function instagramSetup (userId, code){
     return new Promise(async (resolve, reject) => {
@@ -45,17 +99,16 @@ async function instagramSetup (userId, code){
             const expiration = longAuth_result["expiration"]
 
             const posts = await getMedia(access_token)
+			const derivedKey = deriveKeyFromUserId(userId);
+			const encryptedToken = encryptData(access_token, derivedKey);
 
-            feed_cache.set(userId, posts)
-            
             const data = {
                 api_id: api_userID,
                 instagram_id: instagram_userId, 
-                access_token: access_token,
+                access_token: encryptedToken,
                 username: instagram_handle,
                 date: expiration
             }
-
             // No need to wait for this
             uploadtToDatabase(userId, data);
             resolve({username: instagram_handle, feed: posts})
@@ -179,7 +232,6 @@ async function getMedia (access_token){
                     }
                 }
             }
-			console.log(post);
             console.log("Good work Phillip")
             resolve(post)
         } catch (error){
@@ -193,7 +245,7 @@ async function getImage (id, access_token){
     try{
         const url = `https://graph.instagram.com/${id}?fields=media_type,media_url,timestamp&access_token=${access_token}`;
         const response = await axios.get(url);
-        // console.log(response.data)
+
         if (response.data){
             if (!(response.data["media_type"] === 'IMAGE' || response.data["media_type"] === 'CAROUSEL_ALBUM')) {
                 return 0
@@ -235,5 +287,6 @@ function calcExpirationDate(expires_in_seconds) {
 }
 
 module.exports = {
-    instagramSetup
+    instagramSetup,
+	fetchFeed
 };
