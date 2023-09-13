@@ -73,9 +73,10 @@ router.post('/request/accept', async (req, res) => {
 		const senderPfp = req.body.senderPfp;
 		const date = req.body.date;
 		const airport = req.body.airport;
-		await acceptRequest(requestId, recieverFlightId, recieverName, recieverUserId,
+		const match = await acceptRequest(requestId, recieverFlightId, recieverName, recieverUserId,
 			recieverPfp, senderFlightId, senderName, senderUserId, senderPfp, date, airport);
-		res.status(200).json({});
+		console.log(match);
+		res.status(200).json(match);
 		console.log(recieverUserId+" accepted "+senderUserId+"'s request");
 	}catch (error){
 		console.error("Error accepted request, ", error)

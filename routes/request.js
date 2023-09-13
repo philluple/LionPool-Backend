@@ -124,7 +124,7 @@ async function acceptRequest(requestId, recieverFlightId, recieverName, reciever
 				date: dateStamp,
 				pfp: senderPfp,
 				name: senderName,
-				airport: airport
+				airport: airport,
 			}
 
 			const matchB = {
@@ -136,7 +136,7 @@ async function acceptRequest(requestId, recieverFlightId, recieverName, reciever
 				pfp: recieverPfp,
 				name: recieverName,
 				notify: true,
-				airport: airport
+				airport: airport,
 			}
 
 			await senderRef.set(matchB);
@@ -144,7 +144,7 @@ async function acceptRequest(requestId, recieverFlightId, recieverName, reciever
 			await db.collection('users').doc(senderUserId).collection('outRequests').doc(requestId).delete();
 			await db.collection('users').doc(recieverUserId).collection('inRequests').doc(requestId).delete();
 			changeFlightStatus(recieverFlightId, recieverUserId, senderFlightId, senderUserId);
-			resolve(null);
+			resolve(matchA);
 		}catch(error){
 			reject(error);
 		}
@@ -189,6 +189,8 @@ async function fetchInRequests(userId){
 				resolve(requests)
 			} else{
 				userRequests.forEach (request => {
+					console.log("here")
+					console.log(request.data()['status'])
 					requests.push({
 						id: request.data()['id'], 
 						senderFlightId: request.data()['senderFlightId'],
